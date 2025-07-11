@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Explainer & Optimizer</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .input-section, .output-section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .section-title {
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            color: #4a5568;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .control-group label {
+            font-weight: 600;
+            color: #4a5568;
+            font-size: 0.9rem;
+        }
+
+        select, button {
+            padding: 10px 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-interview {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .btn-interview:hover {
+            box-shadow: 0 5px 15px rgba(240, 147, 251, 0.4);
+        }
+
+        .code-editor {
+            width: 100%;
+            min-height: 300px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            resize: vertical;
+            background: #1a202c;
+            color: #e2e8f0;
+        }
+
+        .code-editor:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .output-content {
+            background: #f7fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            min-height: 300px;
+            max-height: 600px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            font-family: 'Segoe UI', sans-serif;
+            line-height: 1.6;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: #667eea;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            color: #e53e3e;
+            background: #fed7d7;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #e53e3e;
+        }
+
+        .success {
+            color: #38a169;
+            background: #c6f6d5;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #38a169;
+        }
+
+        .example-code {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+
+        .footer {
+            text-align: center;
+            color: white;
+            opacity: 0.8;
+            margin-top: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .controls {
+                flex-direction: column;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-code"></i> Code Explainer & Optimizer</h1>
+            <p>Paste any code → get line-by-line explanation, refactored version, complexity analysis, and interview-ready explanations</p>
+        </div>
+
+        <div class="main-content">
+            <div class="input-section">
+                <div class="section-title">
+                    <i class="fas fa-edit"></i>
+                    Input Code
+                </div>
+                
+                <div class="controls">
+                    <div class="control-group">
+                        <label for="language">Programming Language:</label>
+                        <select id="language">
+                            <option value="python">Python</option>
+                            <option value="javascript">JavaScript</option>
+                            <option value="java">Java</option>
+                            <option value="cpp">C++</option>
+                            <option value="csharp">C#</option>
+                            <option value="go">Go</option>
+                            <option value="rust">Rust</option>
+                            <option value="php">PHP</option>
+                            <option value="ruby">Ruby</option>
+                            <option value="swift">Swift</option>
+                            <option value="kotlin">Kotlin</option>
+                            <option value="typescript">TypeScript</option>
+                            <option value="scala">Scala</option>
+                            <option value="haskell">Haskell</option>
+                            <option value="clojure">Clojure</option>
+                            <option value="elixir">Elixir</option>
+                            <option value="erlang">Erlang</option>
+                            <option value="lua">Lua</option>
+                            <option value="perl">Perl</option>
+                            <option value="bash">Bash</option>
+                            <option value="sql">SQL</option>
+                            <option value="html">HTML</option>
+                            <option value="css">CSS</option>
+                            <option value="scss">SCSS</option>
+                            <option value="sass">Sass</option>
+                            <option value="less">Less</option>
+                            <option value="xml">XML</option>
+                            <option value="json">JSON</option>
+                            <option value="yaml">YAML</option>
+                            <option value="toml">TOML</option>
+                            <option value="ini">INI</option>
+                            <option value="markdown">Markdown</option>
+                            <option value="dockerfile">Dockerfile</option>
+                            <option value="makefile">Makefile</option>
+                            <option value="cmake">CMake</option>
+                            <option value="gradle">Gradle</option>
+                            <option value="maven">Maven</option>
+                            <option value="npm">NPM</option>
+                            <option value="yarn">Yarn</option>
+                            <option value="pip">Pip</option>
+                            <option value="cargo">Cargo</option>
+                            <option value="go.mod">Go Modules</option>
+                            <option value="requirements.txt">Requirements.txt</option>
+                            <option value="package.json">Package.json</option>
+                            <option value="pom.xml">POM.xml</option>
+                            <option value="build.gradle">Build.gradle</option>
+                            <option value="Cargo.toml">Cargo.toml</option>
+                            <option value="go.mod">Go.mod</option>
+                            <option value="composer.json">Composer.json</option>
+                            <option value="Gemfile">Gemfile</option>
+                            <option value="Podfile">Podfile</option>
+                            <option value="pubspec.yaml">Pubspec.yaml</option>
+                            <option value="mix.exs">Mix.exs</option>
+                            <option value="rebar.config">Rebar.config</option>
+                            <option value="stack.yaml">Stack.yaml</option>
+                            <option value="project.clj">Project.clj</option>
+                            <option value="deps.edn">Deps.edn</option>
+                            <option value="shard.yml">Shard.yml</option>
+                            <option value="v.mod">V.mod</option>
+                            <option value="nim.cfg">Nim.cfg</option>
+                            <option value="dub.json">Dub.json</option>
+                            <option value="meson.build">Meson.build</option>
+                            <option value="autoconf">Autoconf</option>
+                            <option value="automake">Automake</option>
+                            <option value="libtool">Libtool</option>
+                            <option value="pkg-config">Pkg-config</option>
+                            <option value="vcpkg">Vcpkg</option>
+                            <option value="conan">Conan</option>
+                            <option value="bazel">Bazel</option>
+                            <option value="buck">Buck</option>
+                            <option value="pants">Pants</option>
+                            <option value="please">Please</option>
+                            <option value="scons">SCons</option>
+                            <option value="waf">Waf</option>
+                            <option value="ninja">Ninja</option>
+                            <option value="ant">Ant</option>
+                            <option value="maven">Maven</option>
+                            <option value="gradle">Gradle</option>
+                            <option value="sbt">SBT</option>
+                            <option value="leiningen">Leiningen</option>
+                            <option value="boot">Boot</option>
+                            <option value="shadow-cljs">Shadow-cljs</option>
+                            <option value="figwheel">Figwheel</option>
+                            <option value="rebel-readline">Rebel-readline</option>
+                            <option value="cider">CIDER</option>
+                            <option value="calva">Calva</option>
+                            <option value="chlorine">Chlorine</option>
+                            <option value="conjure">Conjure</option>
+                            <option value="fireplace">Fireplace</option>
+                            <option value="iced">Iced</option>
+                            <option value="vim-iced">Vim-iced</option>
+                            <option value="coc-clojure">Coc-clojure</option>
+                            <option value="lsp-clojure">LSP-clojure</option>
+                            <option value="clojure-lsp">Clojure-lsp</option>
+                            <option value="clj-kondo">Clj-kondo</option>
+                            <option value="eastwood">Eastwood</option>
+                            <option value="kibit">Kibit</option>
+                            <option value="bikeshed">Bikeshed</option>
+                            <option value="yagni">Yagni</option>
+                            <option value="core.typed">Core.typed</option>
+                            <option value="spec">Spec</option>
+                            <option value="schema">Schema</option>
+                            <option value="prismatic">Prismatic</option>
+                            <option value="metosin">Metosin</option>
+                            <option value="reitit">Reitit</option>
+                            <option value="compojure">Compojure</option>
+                            <option value="ring">Ring</option>
+                            <option value="http-kit">Http-kit</option>
+                            <option value="aleph">Aleph</option>
+                            <option value="jetty">Jetty</option>
+                            <option value="undertow">Undertow</option>
+                            <option value="netty">Netty</option>
+                            <option value="vertx">Vert.x</option>
+                            <option value="quarkus">Quarkus</option>
+                            <option value="spring">Spring</option>
+                            <option value="micronaut">Micronaut</option>
+                            <option value="helidon">Helidon</option>
+                            <option value="jax-rs">JAX-RS</option>
+                            <option value="jax-ws">JAX-WS</option>
+                            <option value="servlet">Servlet</option>
+                            <option value="jsp">JSP</option>
+                            <option value="jsf">JSF</option>
+                            <option value="struts">Struts</option>
+                            <option value="wicket">Wicket</option>
+                            <option value="vaadin">Vaadin</option>
+                            <option value="gwt">GWT</option>
+                            <option value="play">Play</option>
+                            <option value="lift">Lift</option>
+                            <option value="scalatra">Scalatra</option>
+                            <option value="akka-http">Akka HTTP</option>
+                            <option value="http4s">Http4s</option>
+                            <option value="finch">Finch</option>
+                            <option value="circe">Circe</option>
+                            <option value="argonaut">Argonaut</option>
+                            <option value="json4s">Json4s</option>
+                            <option value="spray-json">Spray-json</option>
+                            <option value="play-json">Play-json</option>
+                            <option value="lift-json">Lift-json</option>
+                            <option value="argonaut">Argonaut</option>
+                            <option value="circe">Circe</option>
+                            <option value="jsoniter">Jsoniter</option>
+                            <option value="fastjson">Fastjson</option>
+                            <option value="gson">Gson</option>
+                            <option value="jackson">Jackson</option>
+                            <option value="moshi">Moshi</option>
+                            <option value="kotlinx.serialization">Kotlinx.serialization</option>
+                            <option value="breeze">Breeze</option>
+                            <option value="nd4j">ND4J</option>
+                            <option value="dl4j">DL4J</option>
+                            <option value="smile">Smile</option>
+                            <option value="weka">Weka</option>
+                            <option value="rapidminer">RapidMiner</option>
+                            <option value="knime">KNIME</option>
+                            <option value="orange">Orange</option>
+                            <option value="rapidminer">RapidMiner</option>
+                            <option value="weka">Weka</option>
+                            <option value="smile">Smile</option>
+                            <option value="dl4j">DL4J</option>
+                            <option value="nd4j">ND4J</option>
+                            <option value="breeze">Breeze</option>
+                            <option value="kotlinx.serialization">Kotlinx.serialization</option>
+                            <option value="moshi">Moshi</option>
+                            <option value="jackson">Jackson</option>
+                            <option value="gson">Gson</option>
+                            <option value="fastjson">Fastjson</option>
+                            <option value="jsoniter">Jsoniter</option>
+                            <option value="circe">Circe</option>
+                            <option value="argonaut">Argonaut</option>
+                            <option value="lift-json">Lift-json</option>
+                            <option value="play-json">Play-json</option>
+                            <option value="spray-json">Spray-json</option>
+                            <option value="json4s">Json4s</option>
+                            <option value="argonaut">Argonaut</option>
+                            <option value="circe">Circe</option>
+                            <option value="finch">Finch</option>
+                            <option value="http4s">Http4s</option>
+                            <option value="akka-http">Akka HTTP</option>
+                            <option value="scalatra">Scalatra</option>
+                            <option value="lift">Lift</option>
+                            <option value="play">Play</option>
+                            <option value="gwt">GWT</option>
+                            <option value="vaadin">Vaadin</option>
+                            <option value="wicket">Wicket</option>
+                            <option value="struts">Struts</option>
+                            <option value="jsf">JSF</option>
+                            <option value="jsp">JSP</option>
+                            <option value="servlet">Servlet</option>
+                            <option value="jax-ws">JAX-WS</option>
+                            <option value="jax-rs">JAX-RS</option>
+                            <option value="helidon">Helidon</option>
+                            <option value="micronaut">Micronaut</option>
+                            <option value="spring">Spring</option>
+                            <option value="quarkus">Quarkus</option>
+                            <option value="vertx">Vert.x</option>
+                            <option value="netty">Netty</option>
+                            <option value="undertow">Undertow</option>
+                            <option value="jetty">Jetty</option>
+                            <option value="aleph">Aleph</option>
+                            <option value="http-kit">Http-kit</option>
+                            <option value="ring">Ring</option>
+                            <option value="compojure">Compojure</option>
+                            <option value="reitit">Reitit</option>
+                            <option value="metosin">Metosin</option>
+                            <option value="prismatic">Prismatic</option>
+                            <option value="schema">Schema</option>
+                            <option value="spec">Spec</option>
+                            <option value="core.typed">Core.typed</option>
+                            <option value="yagni">Yagni</option>
+                            <option value="bikeshed">Bikeshed</option>
+                            <option value="kibit">Kibit</option>
+                            <option value="eastwood">Eastwood</option>
+                            <option value="clj-kondo">Clj-kondo</option>
+                            <option value="clojure-lsp">Clojure-lsp</option>
+                            <option value="lsp-clojure">LSP-clojure</option>
+                            <option value="coc-clojure">Coc-clojure</option>
+                            <option value="iced">Iced</option>
+                            <option value="vim-iced">Vim-iced</option>
+                            <option value="fireplace">Fireplace</option>
+                            <option value="conjure">Conjure</option>
+                            <option value="chlorine">Chlorine</option>
+                            <option value="calva">Calva</option>
+                            <option value="cider">CIDER</option>
+                            <option value="rebel-readline">Rebel-readline</option>
+                            <option value="figwheel">Figwheel</option>
+                            <option value="shadow-cljs">Shadow-cljs</option>
+                            <option value="boot">Boot</option>
+                            <option value="leiningen">Leiningen</option>
+                            <option value="sbt">SBT</option>
+                            <option value="gradle">Gradle</option>
+                            <option value="maven">Maven</option>
+                            <option value="ant">Ant</option>
+                            <option value="ninja">Ninja</option>
+                            <option value="waf">Waf</option>
+                            <option value="scons">SCons</option>
+                            <option value="please">Please</option>
+                            <option value="pants">Pants</option>
+                            <option value="buck">Buck</option>
+                            <option value="bazel">Bazel</option>
+                            <option value="conan">Conan</option>
+                            <option value="vcpkg">Vcpkg</option>
+                            <option value="pkg-config">Pkg-config</option>
+                            <option value="libtool">Libtool</option>
+                            <option value="automake">Automake</option>
+                            <option value="autoconf">Autoconf</option>
+                            <option value="meson.build">Meson.build</option>
+                            <option value="dub.json">Dub.json</option>
+                            <option value="nim.cfg">Nim.cfg</option>
+                            <option value="v.mod">V.mod</option>
+                            <option value="shard.yml">Shard.yml</option>
+                            <option value="deps.edn">Deps.edn</option>
+                            <option value="project.clj">Project.clj</option>
+                            <option value="stack.yaml">Stack.yaml</option>
+                            <option value="rebar.config">Rebar.config</option>
+                            <option value="mix.exs">Mix.exs</option>
+                            <option value="pubspec.yaml">Pubspec.yaml</option>
+                            <option value="Podfile">Podfile</option>
+                            <option value="Gemfile">Gemfile</option>
+                            <option value="composer.json">Composer.json</option>
+                            <option value="go.mod">Go.mod</option>
+                            <option value="Cargo.toml">Cargo.toml</option>
+                            <option value="build.gradle">Build.gradle</option>
+                            <option value="pom.xml">POM.xml</option>
+                            <option value="package.json">Package.json</option>
+                            <option value="requirements.txt">Requirements.txt</option>
+                            <option value="go.mod">Go Modules</option>
+                            <option value="cargo">Cargo</option>
+                            <option value="pip">Pip</option>
+                            <option value="yarn">Yarn</option>
+                            <option value="npm">NPM</option>
+                            <option value="maven">Maven</option>
+                            <option value="gradle">Gradle</option>
+                            <option value="cmake">CMake</option>
+                            <option value="makefile">Makefile</option>
+                            <option value="dockerfile">Dockerfile</option>
+                            <option value="markdown">Markdown</option>
+                            <option value="ini">INI</option>
+                            <option value="toml">TOML</option>
+                            <option value="yaml">YAML</option>
+                            <option value="json">JSON</option>
+                            <option value="xml">XML</option>
+                            <option value="less">Less</option>
+                            <option value="sass">Sass</option>
+                            <option value="scss">SCSS</option>
+                            <option value="css">CSS</option>
+                            <option value="html">HTML</option>
+                            <option value="sql">SQL</option>
+                            <option value="bash">Bash</option>
+                            <option value="perl">Perl</option>
+                            <option value="lua">Lua</option>
+                            <option value="erlang">Erlang</option>
+                            <option value="elixir">Elixir</option>
+                            <option value="clojure">Clojure</option>
+                            <option value="haskell">Haskell</option>
+                            <option value="scala">Scala</option>
+                            <option value="typescript">TypeScript</option>
+                            <option value="kotlin">Kotlin</option>
+                            <option value="swift">Swift</option>
+                            <option value="ruby">Ruby</option>
+                            <option value="php">PHP</option>
+                            <option value="rust">Rust</option>
+                            <option value="go">Go</option>
+                            <option value="csharp">C#</option>
+                            <option value="cpp">C++</option>
+                            <option value="java">Java</option>
+                            <option value="javascript">JavaScript</option>
+                            <option value="python">Python</option>
+                        </select>
+                    </div>
+                    
+                    <button class="btn" onclick="loadExample()">
+                        <i class="fas fa-lightbulb"></i>
+                        Load Example
+                    </button>
+                </div>
+
+                <textarea id="codeInput" class="code-editor" placeholder="Paste your code here..."></textarea>
+            </div>
+
+            <div class="output-section">
+                <div class="section-title">
+                    <i class="fas fa-chart-line"></i>
+                    Analysis Results
+                </div>
+                
+                <div class="controls">
+                    <button class="btn" onclick="analyzeCode('explain')">
+                        <i class="fas fa-search"></i>
+                        Explain Code
+                    </button>
+                    <button class="btn" onclick="analyzeCode('refactor')">
+                        <i class="fas fa-code"></i>
+                        Refactor Code
+                    </button>
+                    <button class="btn" onclick="analyzeCode('complexity')">
+                        <i class="fas fa-chart-bar"></i>
+                        Complexity Analysis
+                    </button>
+                    <button class="btn btn-interview" onclick="analyzeCode('interview')">
+                        <i class="fas fa-user-tie"></i>
+                        Interview Ready
+                    </button>
+                </div>
+
+                <div id="loading" class="loading">
+                    <div class="spinner"></div>
+                    <p>Analyzing your code...</p>
+                </div>
+
+                <div id="output" class="output-content">
+                    <p style="color: #718096; text-align: center; margin-top: 100px;">
+                        <i class="fas fa-arrow-left" style="font-size: 2rem; margin-bottom: 10px;"></i><br>
+                        Paste your code and select an analysis type to get started!
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Created by Priyanshi Mishra..</p>
+        </div>
+    </div>
+
+    <script>
+        const examples = {
+            python: `def fibonacci(n):
+    """Calculate the nth Fibonacci number using dynamic programming."""
+    if n <= 1:
+        return n
+    
+    # Initialize memoization table
+    memo = [0] * (n + 1)
+    memo[1] = 1
+    
+    # Fill memoization table
+    for i in range(2, n + 1):
+        memo[i] = memo[i-1] + memo[i-2]
+    
+    return memo[n]
+
+# Test the function
+print(fibonacci(10))  # Output: 55`,
+            
+            javascript: `function quickSort(arr) {
+    if (arr.length <= 1) {
+        return arr;
+    }
+    
+    const pivot = arr[Math.floor(arr.length / 2)];
+    const left = arr.filter(x => x < pivot);
+    const middle = arr.filter(x => x === pivot);
+    const right = arr.filter(x => x > pivot);
+    
+    return [...quickSort(left), ...middle, ...quickSort(right)];
+}
+
+// Test the function
+const numbers = [3, 1, 4, 1, 5, 9, 2, 6, 5, 3, 5];
+console.log(quickSort(numbers));`,
+            
+            java: `public class BinarySearch {
+    public static int binarySearch(int[] arr, int target) {
+        int left = 0;
+        int right = arr.length - 1;
+        
+        while (left <= right) {
+            int mid = left + (right - left) / 2;
+            
+            if (arr[mid] == target) {
+                return mid;
+            } else if (arr[mid] < target) {
+                left = mid + 1;
+            } else {
+                right = mid - 1;
+            }
+        }
+        
+        return -1; // Element not found
+    }
+    
+    public static void main(String[] args) {
+        int[] arr = {1, 3, 5, 7, 9, 11, 13, 15};
+        int target = 7;
+        int result = binarySearch(arr, target);
+        System.out.println("Element found at index: " + result);
+    }
+}`
+        };
+
+        function loadExample() {
+            const language = document.getElementById('language').value;
+            const codeInput = document.getElementById('codeInput');
+            
+            if (examples[language]) {
+                codeInput.value = examples[language];
+            } else {
+                codeInput.value = examples.python; // Default to Python example
+            }
+        }
+
+        async function analyzeCode(analysisType) {
+            const code = document.getElementById('codeInput').value.trim();
+            const language = document.getElementById('language').value;
+            
+            if (!code) {
+                showError('Please enter some code to analyze.');
+                return;
+            }
+            
+            // Show loading
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('output').innerHTML = '';
+            
+            try {
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        code: code,
+                        language: language,
+                        analysis_type: analysisType
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResult(data.result, analysisType);
+                } else {
+                    showError(data.error || 'An error occurred while analyzing the code.');
+                }
+            } catch (error) {
+                showError('Network error: ' + error.message);
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        function showResult(result, analysisType) {
+            const output = document.getElementById('output');
+            const icons = {
+                'explain': 'fas fa-search',
+                'refactor': 'fas fa-code',
+                'complexity': 'fas fa-chart-bar',
+                'interview': 'fas fa-user-tie'
+            };
+            
+            const titles = {
+                'explain': 'Code Explanation',
+                'refactor': 'Refactored Code',
+                'complexity': 'Complexity Analysis',
+                'interview': 'Interview-Ready Explanation'
+            };
+            
+            output.innerHTML = `
+                <div class="success">
+                    <h3><i class="${icons[analysisType]}"></i> ${titles[analysisType]}</h3>
+                </div>
+                <div style="margin-top: 15px;">
+                    ${result.replace(/\\n/g, '<br>')}
+                </div>
+            `;
+        }
+
+        function showError(message) {
+            const output = document.getElementById('output');
+            output.innerHTML = `
+                <div class="error">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    ${message}
+                </div>
+            `;
+        }
+
+        // Load Python example by default
+        window.onload = function() {
+            loadExample();
+        };
+    </script>
+</body>
+</html> 
